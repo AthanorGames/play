@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Athanor: a strategy game of alchemical guilds, heroes, and the Great Work.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Athanor">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Athanor</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /*
+      Ads live in rails beside the game, never over it and never eating
+      its height: the map is a landscape board, so width is the cheap
+      dimension and height is the expensive one. A viewport too narrow
+      for a rail gets a thin strip underneath instead — ads.js decides
+      which of the three to fill, and unused ones stay out of the
+      layout entirely.
+    */
+    html, body { height: 100%; margin: 0; background: #14101c; }
+    body { display: flex; flex-direction: column; }
+    #page { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: row; }
+    #game { flex: 1 1 auto; min-width: 0; position: relative; }
+    .ad-rail {
+      display: none; /* ads.js reveals only the rails it fills */
+      flex: 0 0 160px;
+      width: 160px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #0d0a14;
+    }
+    #ad-left.ready, #ad-right.ready { display: flex; }
+    #ad-left { border-right: 1px solid #2b2338; }
+    #ad-right { border-left: 1px solid #2b2338; }
+    #ad-bottom {
+      display: none;
+      flex: 0 0 50px;
+      height: 50px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #0d0a14;
+      border-top: 1px solid #2b2338;
+    }
+    #ad-bottom.ready { display: flex; }
+
+    /* Our own promo, shown where no paid ad is serving. */
+    .house-ad {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 100%;
+      padding: 14px 10px;
+      box-sizing: border-box;
+      text-align: center;
+      text-decoration: none;
+      color: #cbbaa6;
+      font: 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .house-ad strong { color: #e0b894; font-size: 15px; letter-spacing: .02em; }
+    .house-note { color: #8b8073; font-size: 11px; }
+    .house-ad:hover strong { color: #f3ddc9; }
+    /* The seal, drawn in CSS so the promo costs no request. */
+    .house-mark {
+      width: 54px; height: 54px; flex: none;
+      border: 2px solid #c67139;
+      border-radius: 50%;
+      position: relative;
+    }
+    .house-mark::after {
+      content: '';
+      position: absolute; inset: 12px;
+      border: 2px solid #3e7a4e;
+      transform: rotate(45deg);
+    }
+    .house-ad.horizontal {
+      flex-direction: row;
+      gap: 12px;
+      padding: 6px 14px;
+      text-align: left;
+    }
+    .house-ad.horizontal .house-mark { width: 32px; height: 32px; }
+    .house-ad.horizontal .house-mark::after { inset: 7px; }
+
+    /*
+      The phone note (platform.js). Along the bottom, over the game but
+      only a line tall, and gone for good once dismissed. Sits above the
+      Flutter canvas, and inside the safe area so a notch or a home bar
+      cannot eat the close button.
+    */
+    #platform-note {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      padding-left: calc(12px + env(safe-area-inset-left, 0px));
+      padding-right: calc(12px + env(safe-area-inset-right, 0px));
+      background: #17131f;
+      border-top: 1px solid #3a3247;
+      color: #e6dfd3;
+      font: 13px/1.35 system-ui, -apple-system, sans-serif;
+    }
+    #platform-note .pn-text { flex: 1; }
+    #platform-note .pn-link {
+      color: #e0b894;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      padding: 6px 10px;
+      border: 1px solid #7a5a3a;
+      border-radius: 999px;
+    }
+    #platform-note .pn-close {
+      background: none;
+      border: 0;
+      color: #8b8073;
+      font-size: 22px;
+      line-height: 1;
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="page">
+    <aside id="ad-left" class="ad-rail" aria-label="Advertisement"></aside>
+    <div id="game"></div>
+    <aside id="ad-right" class="ad-rail" aria-label="Advertisement"></aside>
+  </div>
+  <aside id="ad-bottom" aria-label="Advertisement"></aside>
+
+  <script src="ad-config.js"></script>
+  <script src="ads.js" defer></script>
+  <script src="platform.js" defer></script>
+  <!--
+    The loader is customized in web/flutter_bootstrap.js so the game
+    mounts into #game. See:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
