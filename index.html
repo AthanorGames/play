@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Athanor: a strategy game of alchemical guilds, heroes, and the Great Work.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Athanor">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Athanor</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /*
+      Two bands, one above the game and one below, always both.
+      This replaced the side rails. The rails were the better shape for
+      a landscape board — width is the cheap dimension and height the
+      expensive one — but they could only ever be two units on a very
+      wide window and one below that, and the pair had to be responsive
+      units squeezed into fixed-height boxes, which AdSense sizes to
+      whatever it likes: measured, the same horizontal unit came back
+      390x390 in a 390px window. Fixed 728x90 leaderboards in bands
+      exactly 90 tall are a size the network cannot argue with.
+
+      Nothing overlays the game. Both bands are rows of the body's own
+      column, so the canvas is laid out in what is left.
+    */
+    html, body { height: 100%; margin: 0; background: #14101c; }
+    body { display: flex; flex-direction: column; }
+    #page { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: row; }
+    /* min-height as well as min-width: height is the constrained axis
+       now, and a flex item defaults to refusing to shrink below its
+       content. */
+    #game { flex: 1 1 auto; min-width: 0; min-height: 0; position: relative; }
+    .ad-band {
+      display: none; /* ads.js reveals only the bands it fills */
+      flex: 0 0 90px;
+      height: 90px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #0d0a14;
+    }
+    .ad-band.ready { display: flex; }
+    #ad-top { border-bottom: 1px solid #2b2338; }
+    #ad-bottom { border-top: 1px solid #2b2338; }
+
+    /* The site's own footer, under the lower band: the privacy policy
+       has to be reachable from any page that carries ads, and it must
+       not be mistaken for part of one. */
+    #site-foot {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      padding: 3px 10px;
+      padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+      background: #14101c;
+      border-top: 1px solid #241d30;
+      font: 11px/1.4 system-ui, -apple-system, sans-serif;
+    }
+    #site-foot a { color: #6f6480; text-decoration: none; }
+    #site-foot a:hover { color: #b3a4c4; }
+
+    /* Our own promo, shown where no paid ad is serving. */
+    .house-ad {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 100%;
+      padding: 14px 10px;
+      box-sizing: border-box;
+      text-align: center;
+      text-decoration: none;
+      color: #cbbaa6;
+      font: 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .house-ad strong { color: #e0b894; font-size: 15px; letter-spacing: .02em; }
+    .house-note { color: #8b8073; font-size: 11px; }
+    .house-ad:hover strong { color: #f3ddc9; }
+    /* The seal, drawn in CSS so the promo costs no request. */
+    .house-mark {
+      width: 54px; height: 54px; flex: none;
+      border: 2px solid #c67139;
+      border-radius: 50%;
+      position: relative;
+    }
+    .house-mark::after {
+      content: '';
+      position: absolute; inset: 12px;
+      border: 2px solid #3e7a4e;
+      transform: rotate(45deg);
+    }
+    .house-ad.horizontal {
+      flex-direction: row;
+      gap: 12px;
+      padding: 6px 14px;
+      text-align: left;
+    }
+    .house-ad.horizontal .house-mark { width: 32px; height: 32px; }
+    .house-ad.horizontal .house-mark::after { inset: 7px; }
+
+    /*
+      The phone note (platform.js). Along the bottom, over the game but
+      only a line tall, and gone for good once dismissed. Sits above the
+      Flutter canvas, and inside the safe area so a notch or a home bar
+      cannot eat the close button.
+    */
+    /* Above the lower ad band, never on top of it: a fixed bar at
+       bottom:0 used to cover the strip entirely, so an ad was requested,
+       rendered and invisible. */
+    #platform-note {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      padding-left: calc(12px + env(safe-area-inset-left, 0px));
+      padding-right: calc(12px + env(safe-area-inset-right, 0px));
+      background: #17131f;
+      border-top: 1px solid #3a3247;
+      border-bottom: 1px solid #3a3247;
+      color: #e6dfd3;
+      font: 13px/1.35 system-ui, -apple-system, sans-serif;
+    }
+    /* ads.js sets this on <body> while the lower band is showing. */
+    body.ad-band-below #platform-note { bottom: 90px; padding-bottom: 8px; }
+    #platform-note .pn-text { flex: 1; }
+    #platform-note .pn-link {
+      color: #e0b894;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      padding: 6px 10px;
+      border: 1px solid #7a5a3a;
+      border-radius: 999px;
+    }
+    #platform-note .pn-close {
+      background: none;
+      border: 0;
+      color: #8b8073;
+      font-size: 22px;
+      line-height: 1;
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <aside id="ad-top" class="ad-band" aria-label="Advertisement"></aside>
+  <div id="page">
+    <div id="game"></div>
+  </div>
+  <aside id="ad-bottom" class="ad-band" aria-label="Advertisement"></aside>
+  <nav id="site-foot">
+    <a href="https://help.athanor.games/privacy">Privacy</a>
+    <a href="https://help.athanor.games/">Player guide</a>
+  </nav>
+
+  <script src="ad-config.js"></script>
+  <script src="ads.js" defer></script>
+  <script src="platform.js" defer></script>
+  <!--
+    The loader is customized in web/flutter_bootstrap.js so the game
+    mounts into #game. See:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
